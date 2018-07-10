@@ -4,24 +4,21 @@ import os
 import time
 import datetime
 import schedule
+import json
 from pprint import pprint
 
 
-HOME = "Hittell Place San Jose"
-OFFICE = "2100 University Avenue East Palo Alto"
-DEPARTURE_TIME = "now"
-# TODO: Don't use as plaintext
-KEY =
+KEY = open("gdir.key").read()
 master = {}
 
 
-def get_duration(origin, destination):
+def get_duration(origin, destination, departure_time="now"):
     today_year = str(datetime.datetime.now().year)
     today_month = str(datetime.datetime.now().month)
     today_day = str(datetime.datetime.now().day)
 
     options = {"origin": re.sub(" ", "+", origin), "destination": re.sub(" ", "+", destination),
-               "departure_time": DEPARTURE_TIME, "key": KEY}
+               "departure_time": departure_time, "key": KEY}
 
     r = requests.get("https://maps.googleapis.com/maps/api/directions/json", params=options)
     print datetime.datetime.now().time(), r.url
@@ -51,6 +48,10 @@ def get_duration(origin, destination):
 
 
 def main():
+    with open("params.json") as f:
+        params = json.load(f)
+    home = params["home"]
+    office = params["office "]
     morning_times = []
     evening_times = []
 
@@ -65,9 +66,9 @@ def main():
         os.rename("times.json", "times_{}.json".format(now_time))
 
     for time_to_run in morning_times:
-        schedule.every().day.at(time_to_run).do(get_duration, HOME, OFFICE)
+        schedule.every().day.at(time_to_run).do(get_duration, home, office)
     for time_to_run in evening_times:
-        schedule.every().day.at(time_to_run).do(get_duration, OFFICE, HOME)
+        schedule.every().day.at(time_to_run).do(get_duration, office, home)
 
     while True:
         schedule.run_pending()
